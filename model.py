@@ -210,10 +210,14 @@ class fusionVGG19(nn.Module):
         f3 = self.Upsample4(f3)
         f4 = self.Upsample8(f4)
         print(f1.shape, f2.shape, f3.shape, f4.shape)
+        print("f1: ", f1.shape)
+        print("f2: ", f2.shape)
+        print("f3: ", f3.shape)
+        print("f4: ", f4.shape)
         bone = torch.cat((f1, f2, f3, f4), 1)
 
         bone = self.dilated_block(bone)
         attention = self.getAttention(bone, self.fnum * 4)
         y = self.UpsampleOrigin(self.predictionWithAttention(bone, attention))
 
-        return [y]
+        return y

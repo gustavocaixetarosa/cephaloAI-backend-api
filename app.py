@@ -1,14 +1,18 @@
 from flask import Flask, Response, request, jsonify
+from flask_cors import cross_origin, CORS
 import os
 
+from model import fusionVGG19, dilationInceptionModule
 from imagem_service import ImagemService
 
 service = ImagemService("models/proccess_dataTeste.pkl")
 
 app = Flask(__name__)
+CORS(app)
 
 
-@app.route("/processarimagem", methods=["POST"])
+@app.route("/processar-imagem", methods=["POST"])
+@cross_origin()
 def processar() -> Response:
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
@@ -23,7 +27,7 @@ def processar() -> Response:
         coords, _, _ = service.model.getCoordinate(outputs)
         coords_list = coords.squeeze(0).cpu().numpy().tolist()
 
-        return jsonify({"landkmarkds": coords_list})
+        return jsonify({"coords": coords_list})
     finally:
         if os.path.exists(img_temp_path):
             os.remove(img_temp_path)
