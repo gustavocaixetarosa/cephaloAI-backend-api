@@ -3,7 +3,7 @@ import os
 
 from imagem_service import ImagemService
 
-service = ImagemService("models/")
+service = ImagemService("models/proccess_dataTeste.pkl")
 
 app = Flask(__name__)
 
