@@ -1,9 +1,9 @@
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, send_file
 from flask_cors import cross_origin, CORS
 import os
 
 from model import fusionVGG19, dilationInceptionModule
-from imagem_service import ImagemService
+from imagem_service import ImagemService, desenhar_pontos
 import angle
 
 service = ImagemService("models/proccess_dataTeste.pkl")
@@ -35,13 +35,28 @@ def processar() -> Response:
         points = [angle.Point(x, y) for x, y in coords_list]
 
         angles = angle.classification(points)
+        print("Printing angles")
         print(angles)
 
-        return jsonify({"coords": coords_list, "angles": angles})
+        img_overlay_path = f"ovl_{file.filename}"
+        desenhar_pontos(img_temp_path, coords_list, img_overlay_path)
+        print("Imagem com overlay salva em: " + img_overlay_path)
+        return jsonify(
+            {
+                "coords": coords_list,
+                "angles": angles,
+                "image_with_overlay_path": img_overlay_path,
+            }
+        )
 
     finally:
         if os.path.exists(img_temp_path):
             os.remove(img_temp_path)
+
+
+@app.route("/download-imagem/<filename>")
+def download_imagem(filename):
+    return send_file(filename, mimetype="image/png", as_attachment=True)
 
 
 if __name__ == "__main__":

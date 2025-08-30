@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
+import cv2
 
 
 class ImagemService:
@@ -39,3 +40,19 @@ class ImagemService:
             outputs = self.model(input_tensor)
 
         return outputs
+
+
+def desenhar_pontos(img_path, coords, saida_path="saida.png"):
+    img = cv2.imread(img_path)
+    if img is None:
+        raise ValueError("Não foi possível carregar a imagem!")
+
+    h, w = img.shape[:2]
+
+    for x_norm, y_norm in coords:
+        x = int(x_norm * w)
+        y = int(y_norm * h)
+        cv2.circle(img, (x, y), radius=4, color=(0, 0, 255), thickness=-1)
+
+    cv2.imwrite(saida_path, img)
+    return saida_path
