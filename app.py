@@ -4,6 +4,7 @@ import os
 
 from model import fusionVGG19, dilationInceptionModule
 from imagem_service import ImagemService
+import angle
 
 service = ImagemService("models/proccess_dataTeste.pkl")
 
@@ -25,9 +26,19 @@ def processar() -> Response:
         outputs = service.predict(img_temp_path)
 
         coords, _, _ = service.model.getCoordinate(outputs)
+        print("printing coords")
+        print(coords)
         coords_list = coords.squeeze(0).cpu().numpy().tolist()
+        print("printing coords_list")
+        print(coords_list)
 
-        return jsonify({"coords": coords_list})
+        points = [angle.Point(x, y) for x, y in coords_list]
+
+        angles = angle.classification(points)
+        print(angles)
+
+        return jsonify({"coords": coords_list, "angles": angles})
+
     finally:
         if os.path.exists(img_temp_path):
             os.remove(img_temp_path)
