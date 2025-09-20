@@ -2,6 +2,7 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import cv2
+import angle
 
 
 class ImagemService:
@@ -39,10 +40,15 @@ class ImagemService:
         with torch.no_grad():
             outputs = self.model(input_tensor)
 
-        return outputs
+        coords, _, _ = self.model.getCoordinate(outputs)
+        coords_list = coords.squeeze(0).cpu().numpy().tolist()
+        points = [angle.Point(x, y) for x, y in coords_list]
+        angles = angle.classification(points)
+        return coords_list, angles
 
 
-def desenhar_pontos(img_path, coords, saida_path="saida.png"):
+def desenhar_pontos(img_path, coords):
+    saida_path = img_path.split("_", 1)[1]
     img = cv2.imread(img_path)
     if img is None:
         raise ValueError("Não foi possível carregar a imagem!")
