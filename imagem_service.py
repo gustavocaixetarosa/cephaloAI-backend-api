@@ -58,7 +58,7 @@ def desenhar_pontos(img_path, coords):
     for x_norm, y_norm in coords:
         x = int(x_norm * w)
         y = int(y_norm * h)
-        cv2.circle(img, (x, y), radius=4, color=(0, 0, 255), thickness=-1)
+        cv2.circle(img, (x, y), radius=15, color=(0, 0, 255), thickness=-1)
 
     cv2.imwrite(saida_path, img)
     return saida_path
