@@ -85,7 +85,7 @@ class fusionVGG19(nn.Module):
         self.avgPool4t = nn.AvgPool2d(4, 4)
         self.avgPool2t = nn.AvgPool2d(2, 2)
         self.attentionLayer1 = nn.Sequential(
-            nn.Linear(6, 128, bias=False),
+            nn.Linear(500, 128, bias=False),
             nn.BatchNorm1d(1, track_running_stats=False),
             nn.Tanh(),
             nn.Linear(128, config.landmarkNum * 3, bias=False),
@@ -102,12 +102,11 @@ class fusionVGG19(nn.Module):
         self.prediction = nn.Conv2d(
             fnum * 4, config.landmarkNum * 3, kernel_size=(1, 1), stride=1, padding=0
         )
-        self.Upsample2 = nn.Upsample(size=[25, 20], mode="bilinear")
-        self.Upsample4 = nn.Upsample(size=[25, 20], mode="bilinear")
-        self.Upsample8 = nn.Upsample(size=[25, 20], mode="bilinear")
+        self.Upsample2 = nn.Upsample(scale_factor=2, mode="bilinear")
+        self.Upsample4 = nn.Upsample(scale_factor=4, mode="bilinear")
+        self.Upsample8 = nn.Upsample(scale_factor=8, mode="bilinear")
         self.Upsample16 = nn.Upsample(scale_factor=16, mode="bilinear")
         self.Upsample32 = nn.Upsample(scale_factor=32, mode="bilinear")
-        self.UpsampleOrigin = nn.Upsample(size=[100, 80], mode="bilinear")
 
         self.landmarksNum = config.landmarkNum
         self.batchSize = config.batchSize
@@ -117,10 +116,10 @@ class fusionVGG19(nn.Module):
 
         self.coordinateX = torch.ones(
             self.batchSize, self.landmarksNum, self.higth, self.width
-        ).cpu()
+        ).cuda(config.use_gpu)
         self.coordinateY = torch.ones(
             self.batchSize, self.landmarksNum, self.higth, self.width
-        ).cpu()
+        ).cuda(config.use_gpu)
 
         for i in range(self.higth):
             self.coordinateX[:, :, i, :] = self.coordinateX[:, :, i, :] * i
@@ -194,7 +193,6 @@ class fusionVGG19(nn.Module):
 
     def forward(self, x):
         x = self.VGG_layer1(x)
-        print(x.shape)
         f1 = self.f_conv1(x)
 
         x = self.VGG_layer2(x)
@@ -209,15 +207,16 @@ class fusionVGG19(nn.Module):
         f2 = self.Upsample2(f2)
         f3 = self.Upsample4(f3)
         f4 = self.Upsample8(f4)
-        print(f1.shape, f2.shape, f3.shape, f4.shape)
-        print("f1: ", f1.shape)
-        print("f2: ", f2.shape)
-        print("f3: ", f3.shape)
-        print("f4: ", f4.shape)
+
         bone = torch.cat((f1, f2, f3, f4), 1)
 
+        # Attentive Feature Pyramid Fusion
         bone = self.dilated_block(bone)
-        attention = self.getAttention(bone, self.fnum * 4)
-        y = self.UpsampleOrigin(self.predictionWithAttention(bone, attention))
 
-        return y
+        attention = self.getAttention(bone, self.fnum * 4)
+        y = self.Upsample4(self.predictionWithAttention(bone, attention))
+
+        # predicting landmarks with the integral operation
+        # coordinateMean1, coordinateMean2, coordinateDev = self.getCoordinate(y)
+
+        return [y]

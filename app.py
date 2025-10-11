@@ -5,7 +5,7 @@ import os
 from model import fusionVGG19, dilationInceptionModule
 from imagem_service import ImagemService, desenhar_pontos
 
-service = ImagemService("models/proccess_dataTeste.pkl")
+service = ImagemService("models/Best_Model400it.pt")
 
 app = Flask(__name__)
 CORS(app)
