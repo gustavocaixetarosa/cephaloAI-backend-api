@@ -5,7 +5,7 @@ import os
 from model import fusionVGG19, dilationInceptionModule
 from imagem_service import ImagemService, desenhar_pontos
 
-service = ImagemService("models/proccess_dataTeste.pkl")
+service = ImagemService("models/Best_Model400it.pt")
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +17,8 @@ def processar() -> Response:
     img_temp_path = checkAndHandleFile(request)
     try:
         coords_list, angles = service.predict(img_temp_path)
+        print("Coordenadas preditas:", coords_list)
+        print("Ângulos calculados:", angles)
         img_overlay_path = desenhar_pontos(img_temp_path, coords_list)
         print("Imagem com overlay salva em: " + img_overlay_path)
         return jsonify(

@@ -1,40 +1,51 @@
 import torch
+from data_loader import Rescale, ToTensor
 import torchvision.transforms as transforms
 from PIL import Image
 import cv2
 import angle
+from model import fusionVGG19
+from skimage import io
+import numpy as np
 
 
 class ImagemService:
     def __init__(self, checkpoint_path, device="cuda"):
-        # Dispositivo
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
 
-        # Carregar modelo salvo como objeto
-        self.model = torch.load(
-            checkpoint_path, map_location=self.device, weights_only=False
-        ).to(self.device)
+        # Crie o modelo e o config (ajuste conforme seu config real)
+        # Exemplo de config mínimo:
+        class Config:
+            landmarkNum = 19
+            batchSize = 1
+            R2 = 41
+            image_scale = (800, 640)
 
+        config = Config()
+        self.config = config
+        image_h, image_w = config.image_scale
+        self.transform = transforms.Compose([
+            Rescale((image_h, image_w)),
+            ToTensor()
+        ])
+
+        # Carregue o modelo base (ex: torchvision.models.vgg19)
+        import torchvision.models as models
+
+        vgg_model = models.vgg19_bn(weights=models.VGG19_BN_Weights.IMAGENET1K_V1)
+
+        self.model = fusionVGG19(vgg_model, config).to(self.device)
+
+        # Carregue o state_dict salvo
+        checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
         self.model.eval()
 
-        # Definir transform (ajuste image_h, image_w para o que você usou no treino)
-        image_h, image_w = 200, 160  # <<< substitua pelo seu image_scale
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((image_h, image_w)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.5], std=[0.5]
-                ),  # ajuste se usou outra normalização
-            ]
-        )
-
     def predict(self, image_path):
-        # Abrir imagem
-        image = Image.open(image_path).convert("RGB")
-
-        # Aplicar transform
-        input_tensor = self.transform(image).unsqueeze(0).to(self.device)
+        image = io.imread(image_path)
+        sample = {'image': image, 'landmarks': np.zeros((self.config.landmarkNum, 2))}
+        sample = self.transform(sample)
+        input_tensor = sample['image'].unsqueeze(0).to(self.device)
 
         # Forward pass
         with torch.no_grad():

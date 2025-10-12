@@ -85,7 +85,7 @@ class fusionVGG19(nn.Module):
         self.avgPool4t = nn.AvgPool2d(4, 4)
         self.avgPool2t = nn.AvgPool2d(2, 2)
         self.attentionLayer1 = nn.Sequential(
-            nn.Linear(6, 128, bias=False),
+            nn.Linear(500, 128, bias=False),
             nn.BatchNorm1d(1, track_running_stats=False),
             nn.Tanh(),
             nn.Linear(128, config.landmarkNum * 3, bias=False),
@@ -102,12 +102,12 @@ class fusionVGG19(nn.Module):
         self.prediction = nn.Conv2d(
             fnum * 4, config.landmarkNum * 3, kernel_size=(1, 1), stride=1, padding=0
         )
-        self.Upsample2 = nn.Upsample(size=[25, 20], mode="bilinear")
-        self.Upsample4 = nn.Upsample(size=[25, 20], mode="bilinear")
-        self.Upsample8 = nn.Upsample(size=[25, 20], mode="bilinear")
+        self.Upsample2 = nn.Upsample(scale_factor=2, mode="bilinear")
+        self.Upsample4 = nn.Upsample(scale_factor=4, mode="bilinear")
+        self.Upsample8 = nn.Upsample(scale_factor=8, mode="bilinear")
         self.Upsample16 = nn.Upsample(scale_factor=16, mode="bilinear")
         self.Upsample32 = nn.Upsample(scale_factor=32, mode="bilinear")
-        self.UpsampleOrigin = nn.Upsample(size=[100, 80], mode="bilinear")
+        self.UpsampleOrigin = nn.Upsample(size=[800, 640], mode="bilinear")
 
         self.landmarksNum = config.landmarkNum
         self.batchSize = config.batchSize
