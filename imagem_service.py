@@ -43,7 +43,7 @@ class ImagemService:
 
     def predict(self, image_path):
         image = io.imread(image_path)
-        sample = {'image': image, 'landmarks': np.zeros((self.config.landmarkNum, 2))}
+        sample = {'image': image, 'landmarks': np.zeros((self.config.landmarkNum, 2))}  # dummy landmarks
         sample = self.transform(sample)
         input_tensor = sample['image'].unsqueeze(0).to(self.device)
 
@@ -67,8 +67,8 @@ def desenhar_pontos(img_path, coords):
     h, w = img.shape[:2]
 
     for x_norm, y_norm in coords:
-        x = int(x_norm * w)
-        y = int(y_norm * h)
+        x = int(y_norm * w)
+        y = int(x_norm * h)
         cv2.circle(img, (x, y), radius=15, color=(0, 0, 255), thickness=-1)
 
     cv2.imwrite(saida_path, img)
